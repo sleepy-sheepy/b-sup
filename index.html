@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Locked Surprise</title>
+    <style>
+      :root {
+        --bg: #f4fbff;
+        --card: #ffffff;
+        --ink: #35506b;
+        --muted: #63819b;
+        --blue: #8ed2ff;
+        --blue-dark: #67bdef;
+        --line: #bfe6ff;
+        --ok: #2f9f73;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Nunito", "Segoe UI", sans-serif;
+        background: #eef8ff;
+        background-image:
+          radial-gradient(circle at 12% 14%, #ffffff 0 35px, transparent 36px),
+          radial-gradient(circle at 88% 18%, #dff2ff 0 28px, transparent 29px),
+          radial-gradient(circle at 76% 82%, #ffffff 0 32px, transparent 33px);
+        color: var(--ink);
+        display: grid;
+        place-items: center;
+        padding: 18px;
+      }
+
+      .card {
+        position: relative;
+        width: min(680px, 100%);
+        background: var(--card);
+        border: 3px solid var(--line);
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: 0 8px 0 #d7efff;
+        overflow: hidden;
+      }
+
+      h1 {
+        margin: 0;
+        text-align: center;
+        font-size: clamp(1.5rem, 4vw, 2.1rem);
+      }
+
+      .intro {
+        margin: 12px auto 0;
+        max-width: 56ch;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .level {
+        margin-top: 20px;
+        border: 2px dashed var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        background: #fafdff;
+        opacity: 0;
+        transform: translateY(6px);
+        pointer-events: none;
+        transition: opacity 280ms ease, transform 280ms ease;
+        display: none;
+      }
+
+      .level.active {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      h2 {
+        margin: 0 0 8px;
+        font-size: 1.2rem;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .btn {
+        border: 2px solid #75c6f8;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font-weight: 800;
+        color: #245170;
+        background: #dff3ff;
+        box-shadow: 0 4px 0 #9bd8ff;
+        cursor: pointer;
+      }
+
+      .btn:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 0 #9bd8ff;
+      }
+
+      .counter,
+      .hint {
+        margin-top: 10px;
+        color: var(--muted);
+      }
+
+      .input {
+        width: 120px;
+        padding: 11px 12px;
+        border-radius: 12px;
+        border: 2px solid #bfe4fb;
+        background: #f8fdff;
+      }
+
+      .msg {
+        margin-top: 10px;
+        min-height: 1.2em;
+        color: #3b79a3;
+        font-weight: 700;
+      }
+
+      .progress {
+        width: 100%;
+        height: 14px;
+        border-radius: 999px;
+        border: 2px solid #bde4fd;
+        background: #edf8ff;
+        overflow: hidden;
+        margin-top: 12px;
+      }
+
+      .progress-fill {
+        width: 0%;
+        height: 100%;
+        background: repeating-linear-gradient(
+          -45deg,
+          #9bd8ff,
+          #9bd8ff 12px,
+          #7fcdfb 12px,
+          #7fcdfb 24px
+        );
+        transition: width 70ms linear;
+      }
+
+      .loading {
+        min-height: 2em;
+        margin-top: 8px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .reveal {
+        margin-top: 16px;
+        text-align: center;
+      }
+
+      .reveal h3 {
+        margin: 0;
+        font-size: clamp(1.4rem, 4vw, 1.9rem);
+      }
+
+      .reveal p {
+        margin: 10px auto 0;
+        max-width: 50ch;
+        color: var(--muted);
+      }
+
+      .card-image {
+        margin-top: 14px;
+        width: min(100%, 500px);
+        border-radius: 12px;
+        border: 3px solid #bee6ff;
+        box-shadow: 0 5px 0 #d7efff;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+
+      .card-image:hover {
+        transform: scale(1.02);
+      }
+
+      .image-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+        cursor: pointer;
+      }
+
+      .image-modal.active {
+        display: flex;
+      }
+
+      .image-modal-content {
+        max-width: 90vw;
+        max-height: 90vh;
+        border-radius: 16px;
+        border: 4px solid #bee6ff;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        cursor: default;
+        position: relative;
+      }
+
+      .image-modal-content img {
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        object-fit: contain;
+        border-radius: 12px;
+        display: block;
+      }
+
+      .close-modal {
+        position: absolute;
+        top: -15px;
+        right: -15px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 3px solid #bee6ff;
+        background: #fff;
+        color: #6bb5ff;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease;
+      }
+
+      .close-modal:hover {
+        transform: scale(1.1);
+      }
+
+      .download-btn {
+        margin-top: 16px;
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 1rem;
+        color: #fff;
+        background: #6bb5ff;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(107, 181, 255, 0.3);
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+      }
+
+      .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(107, 181, 255, 0.4);
+      }
+
+      .download-btn:active {
+        transform: translateY(0);
+      }
+
+      .confetti {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .piece {
+        position: absolute;
+        width: 10px;
+        height: 14px;
+        border-radius: 3px;
+        animation: fall 1300ms linear forwards;
+      }
+
+      @keyframes fall {
+        from {
+          transform: translateY(-30px) rotate(0deg);
+          opacity: 1;
+        }
+        to {
+          transform: translateY(520px) rotate(380deg);
+          opacity: 0.2;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .card {
+          padding: 16px;
+        }
+        .btn {
+          width: 100%;
+        }
+        .input {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>🔒 Locked Surprise</h1>
+      <p class="intro">
+        This is a suppppeerrr secure system. Complete the
+        following challenges to unlock it :D
+      </p>
+
+      <section id="level1" class="level active">
+        <h2>Level 1 - System Calibration</h2>
+        <button id="calibrateBtn" class="btn" type="button">Calibrate</button>
+        <p id="calibrationCount" class="counter">Calibration: 0 / 5</p>
+      </section>
+
+      <section id="level2" class="level">
+        <h2>Level 2 - Quick Verification</h2>
+        <p>6 + 2 = ?</p>
+        <div class="row">
+          <input id="answerInput" class="input" type="number" inputmode="numeric" />
+          <button id="submitAnswerBtn" class="btn" type="button">Submit</button>
+        </div>
+        <p id="answerMsg" class="msg"></p>
+      </section>
+
+      <section id="level3" class="level">
+        <h2>Level 3 - Stability Test</h2>
+        <p class="hint">Hold the button for 3 seconds.</p>
+        <button id="stabilizeBtn" class="btn" type="button">Stabilize</button>
+        <div class="progress">
+          <div id="stabilityFill" class="progress-fill"></div>
+        </div>
+      </section>
+
+      <section id="loadingLevel" class="level">
+        <h2>Final Check</h2>
+        <p id="loadingText" class="loading">Processing...</p>
+      </section>
+
+      <section id="revealLevel" class="level">
+        <div class="reveal">
+          <h3>🎉 Surprise Unlocked!</h3>
+          <p>happy birthday braxy!!</p>
+          <!-- Replace the src below with your PNG file path, e.g. src="card.png" -->
+          <img id="surpriseImage" class="card-image" src="card.png" alt="Unlocked surprise card" />
+          <button id="downloadBtn" class="download-btn" type="button">📥 Download Card</button>
+        </div>
+      </section>
+
+      <div id="confetti" class="confetti" aria-hidden="true"></div>
+    </main>
+
+    <div id="imageModal" class="image-modal" aria-hidden="true">
+      <div class="image-modal-content">
+        <button class="close-modal" type="button" aria-label="Close">×</button>
+        <img id="modalImage" src="" alt="Enlarged birthday card" />
+      </div>
+    </div>
+
+    <script>
+      // TypeScript-style code using JSDoc typing so this single file runs directly in browser.
+      /** @type {HTMLElement} */ const level1 = document.getElementById("level1");
+      /** @type {HTMLElement} */ const level2 = document.getElementById("level2");
+      /** @type {HTMLElement} */ const level3 = document.getElementById("level3");
+      /** @type {HTMLElement} */ const loadingLevel = document.getElementById("loadingLevel");
+      /** @type {HTMLElement} */ const revealLevel = document.getElementById("revealLevel");
+      /** @type {HTMLButtonElement} */ const calibrateBtn = document.getElementById("calibrateBtn");
+      /** @type {HTMLElement} */ const calibrationCount = document.getElementById("calibrationCount");
+      /** @type {HTMLInputElement} */ const answerInput = document.getElementById("answerInput");
+      /** @type {HTMLButtonElement} */ const submitAnswerBtn = document.getElementById("submitAnswerBtn");
+      /** @type {HTMLElement} */ const answerMsg = document.getElementById("answerMsg");
+      /** @type {HTMLButtonElement} */ const stabilizeBtn = document.getElementById("stabilizeBtn");
+      /** @type {HTMLElement} */ const stabilityFill = document.getElementById("stabilityFill");
+      /** @type {HTMLElement} */ const loadingText = document.getElementById("loadingText");
+      /** @type {HTMLElement} */ const confetti = document.getElementById("confetti");
+      /** @type {HTMLImageElement} */ const surpriseImage = document.getElementById("surpriseImage");
+      /** @type {HTMLButtonElement} */ const downloadBtn = document.getElementById("downloadBtn");
+      /** @type {HTMLElement} */ const imageModal = document.getElementById("imageModal");
+      /** @type {HTMLImageElement} */ const modalImage = document.getElementById("modalImage");
+      /** @type {HTMLButtonElement} */ const closeModalBtn = document.querySelector(".close-modal");
+
+      const levels = [level1, level2, level3, loadingLevel, revealLevel];
+      let calibration = 0;
+      let holdStart = 0;
+      let holdFrame = 0;
+      let holding = false;
+
+      /**
+       * @param {HTMLElement} target
+       */
+      function goToLevel(target) {
+        levels.forEach((level) => level.classList.remove("active"));
+        target.classList.add("active");
+      }
+
+      calibrateBtn.addEventListener("click", () => {
+        calibration += 1;
+        calibrationCount.textContent = "Calibration: " + calibration + " / 5";
+        if (calibration >= 5) {
+          setTimeout(() => goToLevel(level2), 220);
+        }
+      });
+
+      function checkAnswer() {
+        const value = Number(answerInput.value);
+        if (value === 8) {
+          answerMsg.textContent = "";
+          goToLevel(level3);
+        } else {
+          answerMsg.textContent = "Try again.";
+        }
+      }
+
+      submitAnswerBtn.addEventListener("click", checkAnswer);
+      answerInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") checkAnswer();
+      });
+
+      function resetHold() {
+        holding = false;
+        holdStart = 0;
+        stabilityFill.style.width = "0%";
+        if (holdFrame) cancelAnimationFrame(holdFrame);
+      }
+
+      function holdTick() {
+        if (!holding || !holdStart) return;
+        const elapsed = performance.now() - holdStart;
+        const percent = Math.min(100, (elapsed / 3000) * 100);
+        stabilityFill.style.width = percent + "%";
+
+        if (percent >= 100) {
+          holding = false;
+          startLoadingSequence();
+          return;
+        }
+        holdFrame = requestAnimationFrame(holdTick);
+      }
+
+      function startHold() {
+        if (holding) return;
+        holding = true;
+        holdStart = performance.now();
+        holdFrame = requestAnimationFrame(holdTick);
+      }
+
+      function startLoadingSequence() {
+        goToLevel(loadingLevel);
+        const steps = ["Processing...", "Verifying...", "Unlocking surprise..."];
+        loadingText.textContent = steps[0];
+        setTimeout(() => (loadingText.textContent = steps[1]), 650);
+        setTimeout(() => (loadingText.textContent = steps[2]), 1300);
+        setTimeout(() => {
+          goToLevel(revealLevel);
+          popConfetti();
+        }, 2050);
+      }
+
+      function popConfetti() {
+        const colors = ["#7bc9fb", "#9ddafd", "#bce8ff", "#ffffff", "#b6dbff"];
+        for (let i = 0; i < 90; i += 1) {
+          const piece = document.createElement("span");
+          piece.className = "piece";
+          piece.style.left = Math.random() * 100 + "%";
+          piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+          piece.style.animationDelay = Math.random() * 180 + "ms";
+          piece.style.transform = "translateY(-30px) rotate(" + Math.random() * 260 + "deg)";
+          confetti.append(piece);
+          setTimeout(() => piece.remove(), 1600);
+        }
+      }
+
+      stabilizeBtn.addEventListener("pointerdown", startHold);
+      stabilizeBtn.addEventListener("pointerup", resetHold);
+      stabilizeBtn.addEventListener("pointerleave", resetHold);
+      stabilizeBtn.addEventListener("pointercancel", resetHold);
+
+      downloadBtn.addEventListener("click", async () => {
+        try {
+          const imageUrl = surpriseImage.src;
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "birthday-card.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          alert("sikeee i couldn't get this to work lol. Please try right-clicking the image and selecting 'Save Image As...'");
+        }
+      });
+
+      surpriseImage.addEventListener("click", () => {
+        modalImage.src = surpriseImage.src;
+        imageModal.classList.add("active");
+        imageModal.setAttribute("aria-hidden", "false");
+      });
+
+      function closeModal() {
+        imageModal.classList.remove("active");
+        imageModal.setAttribute("aria-hidden", "true");
+      }
+
+      closeModalBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeModal();
+      });
+
+      imageModal.addEventListener("click", (e) => {
+        if (e.target === imageModal) {
+          closeModal();
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && imageModal.classList.contains("active")) {
+          closeModal();
+        }
+      });
+    </script>
+  </body>
+</html>
+
